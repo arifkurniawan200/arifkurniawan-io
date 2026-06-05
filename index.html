@@ -52,6 +52,37 @@ body {
   background: var(--bg-default);
   line-height: 1.6;
   min-height: 100vh;
+  cursor: default;
+}
+
+/* ============================================
+   GRID BACKGROUND
+   ============================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.06) 1px, transparent 0);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   GLOW CURSOR
+   ============================================ */
+.glow-cursor {
+  position: fixed;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  transition: opacity 0.3s ease;
+  will-change: transform;
 }
 
 /* ============================================
@@ -61,6 +92,8 @@ body {
   max-width: 1120px;
   margin: 0 auto;
   padding: 0 24px;
+  position: relative;
+  z-index: 1;
 }
 
 section {
@@ -212,15 +245,51 @@ nav {
   animation-delay: 0.1s;
 }
 
+/* Ambient gradient */
 .hero::before {
   content: '';
   position: absolute;
   top: -50%;
   right: -20%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
   pointer-events: none;
+  animation: ambientFloat 8s ease-in-out infinite;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  animation: ambientFloat 10s ease-in-out infinite reverse;
+}
+
+@keyframes ambientFloat {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20px, -20px); }
+}
+
+/* Hero floating particles */
+.hero-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.3;
+  pointer-events: none;
+  animation: particleFloat 6s ease-in-out infinite;
+}
+
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  50% { transform: translateY(-30px) scale(1.5); opacity: 0.6; }
 }
 
 .badge {
@@ -258,6 +327,7 @@ nav {
   line-height: 1.12;
   margin-bottom: 16px;
   letter-spacing: -0.8px;
+  min-height: 1.2em;
 }
 
 .hero h1 .highlight {
@@ -265,6 +335,22 @@ nav {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Typewriter cursor blink */
+.typing-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 1.1em;
+  background: var(--accent);
+  margin-left: 4px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .hero p {
@@ -300,11 +386,26 @@ nav {
   background: var(--accent);
   color: #fff;
   border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-primary:hover::after {
+  transform: translateX(100%);
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
 }
 
@@ -321,7 +422,7 @@ nav {
 .btn-secondary:hover {
   background: var(--bg-hover);
   border-color: var(--accent);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 /* ============================================
@@ -343,6 +444,24 @@ nav {
   background: var(--bg-surface);
   padding: 24px 20px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.exp-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.exp-item:hover::before {
+  opacity: 1;
 }
 
 .exp-number {
@@ -350,6 +469,11 @@ nav {
   font-weight: 800;
   color: var(--accent-text);
   line-height: 1.2;
+  transition: var(--transition);
+}
+
+.exp-item:hover .exp-number {
+  color: var(--accent);
 }
 
 .exp-label {
@@ -391,13 +515,27 @@ nav {
   transition: var(--transition);
 }
 
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, transparent 50%);
+  opacity: 0;
+  transition: var(--transition);
+  pointer-events: none;
+}
+
 .card:hover {
   border-color: var(--border-accent);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-elevated);
 }
 
 .card:hover::before {
+  opacity: 1;
+}
+
+.card:hover::after {
   opacity: 1;
 }
 
@@ -414,7 +552,7 @@ nav {
 }
 
 .card:hover .card-icon {
-  transform: scale(1.05);
+  transform: scale(1.1) rotate(3deg);
 }
 
 .card-icon.blue {
@@ -455,6 +593,8 @@ nav {
   background: var(--bg-surface);
   margin-bottom: 56px;
   animation-delay: 0.35s;
+  position: relative;
+  overflow: hidden;
 }
 
 .skills-section h3 {
@@ -503,11 +643,20 @@ nav {
 }
 
 .skill-tag:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .skill-tag.solid:hover {
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.skill-tag.ghost:hover {
+  border-color: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+.skill-tag.outline:hover {
+  background: var(--accent-subtle);
 }
 
 /* ============================================
@@ -538,7 +687,7 @@ nav {
   top: 8px;
   bottom: 8px;
   width: 2px;
-  background: var(--border-default);
+  background: linear-gradient(to bottom, var(--accent), var(--accent-soft), var(--border-default));
 }
 
 .timeline-item {
@@ -553,6 +702,7 @@ nav {
 
 .timeline-item:hover {
   border-color: var(--border-accent);
+  transform: translateX(4px);
 }
 
 .timeline-item::before {
@@ -565,6 +715,13 @@ nav {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--bg-default);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  transition: var(--transition);
+}
+
+.timeline-item:hover::before {
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.5);
+  transform: scale(1.2);
 }
 
 .timeline-company {
@@ -610,6 +767,11 @@ nav {
   left: 0;
   color: var(--accent);
   font-weight: 600;
+  transition: var(--transition);
+}
+
+.timeline-item:hover .timeline-bullets li::before {
+  color: var(--accent-text);
 }
 
 /* ============================================
@@ -623,6 +785,19 @@ nav {
   background: var(--bg-surface);
   margin-bottom: 32px;
   animation-delay: 0.45s;
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .contact-section h2 {
@@ -657,13 +832,28 @@ nav {
   font-size: 14px;
   font-weight: 500;
   transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.contact-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.contact-link:hover::before {
+  opacity: 1;
 }
 
 .contact-link:hover {
   background: var(--bg-hover);
   border-color: var(--accent);
   color: var(--text-primary);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .contact-link .icon {
@@ -692,6 +882,16 @@ footer {
   transform: translateY(0);
 }
 
+.reveal.visible .exp-number {
+  animation: countPop 0.4s ease;
+}
+
+@keyframes countPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */
@@ -712,6 +912,8 @@ footer {
 
 @media (max-width: 768px) {
   .container { padding: 0 16px; }
+
+  .glow-cursor { display: none; }
 
   nav {
     padding: 12px 18px;
@@ -823,12 +1025,16 @@ footer {
    ============================================ */
 @media print {
   nav { position: static; backdrop-filter: none; }
-  .hero::before { display: none; }
+  .hero::before, .hero::after { display: none; }
+  .glow-cursor { display: none; }
+  body::before { display: none; }
   .card:hover { transform: none; }
 }
 </style>
 </head>
 <body>
+
+<div class="glow-cursor" id="glowCursor"></div>
 
 <div class="container">
 
@@ -859,7 +1065,7 @@ footer {
       <span class="badge-dot"></span>
       Available for Work
     </div>
-    <h1>Backend <span class="highlight">Engineer</span><br>Golang &amp; Microservices</h1>
+    <h1>Backend <span class="highlight" id="typewriterText"></span><span class="typing-cursor" id="typewriterCursor"></span><br>Golang &amp; Microservices</h1>
     <p>
       I build scalable, high-performance backend systems with Golang, event-driven
       architectures, and cloud-native infrastructure. 5+ years turning complex problems
@@ -874,19 +1080,19 @@ footer {
   <!-- EXPERIENCE STRIP -->
   <section class="experience-strip reveal">
     <div class="exp-item">
-      <div class="exp-number">5+</div>
+      <div class="exp-number" data-target="5">0</div>
       <div class="exp-label">Years Experience</div>
     </div>
     <div class="exp-item">
-      <div class="exp-number">4</div>
+      <div class="exp-number" data-target="4">0</div>
       <div class="exp-label">Companies Served</div>
     </div>
     <div class="exp-item">
-      <div class="exp-number">3</div>
+      <div class="exp-number" data-target="3">0</div>
       <div class="exp-label">Tech Migrations</div>
     </div>
     <div class="exp-item">
-      <div class="exp-number">10+</div>
+      <div class="exp-number" data-target="10">0</div>
       <div class="exp-label">Projects Delivered</div>
     </div>
   </section>
@@ -981,7 +1187,7 @@ footer {
           <li>Developed and maintained investment products with high performance and reliability</li>
           <li>Built experience in microservice architecture and inter-service communication</li>
           <li>Integrated third-party platforms including CleverTap and SaaS core banking system</li>
-          <li>Collaborated cross-functionally to deliver high-quality technical solutions</li>
+          <li>Collaborated cross-functional teams to deliver high-quality technical solutions</li>
         </ul>
       </div>
 
@@ -1019,23 +1225,150 @@ footer {
 </div>
 
 <script>
-// Close mobile nav on link click
-function closeNav() {
-  document.querySelector('.nav-links').classList.remove('open');
+// =============================================
+// GLOW CURSOR
+// =============================================
+const cursor = document.getElementById('glowCursor');
+let mouseX = -300, mouseY = -300;
+let currentX = -300, currentY = -300;
+
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+function animateCursor() {
+  currentX += (mouseX - currentX) * 0.08;
+  currentY += (mouseY - currentY) * 0.08;
+  cursor.style.transform = `translate(${currentX - 150}px, ${currentY - 150}px)`;
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+// Hide cursor glow when mouse leaves window
+document.addEventListener('mouseleave', () => {
+  cursor.style.opacity = '0';
+});
+document.addEventListener('mouseenter', () => {
+  cursor.style.opacity = '1';
+});
+
+// =============================================
+// TYPEWRITER EFFECT
+// =============================================
+const words = ['Engineer', 'Architect', 'Developer'];
+let wordIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+const typeElement = document.getElementById('typewriterText');
+const cursorElement = document.getElementById('typewriterCursor');
+
+function typeEffect() {
+  const currentWord = words[wordIndex];
+
+  if (!isDeleting) {
+    typeElement.textContent = currentWord.substring(0, charIndex + 1);
+    charIndex++;
+    if (charIndex === currentWord.length) {
+      setTimeout(() => { isDeleting = true; }, 2000);
+      setTimeout(typeEffect, 2100);
+      return;
+    }
+  } else {
+    typeElement.textContent = currentWord.substring(0, charIndex - 1);
+    charIndex--;
+    if (charIndex === 0) {
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % words.length;
+    }
+  }
+
+  const delay = isDeleting ? 40 : 80;
+  setTimeout(typeEffect, delay);
 }
 
-// Scroll reveal animation
+// Start typewriter after a short delay
+setTimeout(typeEffect, 800);
+
+// =============================================
+// COUNTER ANIMATION
+// =============================================
+function animateCounter(el) {
+  const target = parseInt(el.getAttribute('data-target'));
+  const suffix = el.getAttribute('data-target') === '10' ? '+' : '+';
+  const duration = 1500;
+  const startTime = performance.now();
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.floor(eased * target);
+    el.textContent = current + suffix;
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    } else {
+      el.textContent = target + suffix;
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+// =============================================
+// SCROLL REVEAL + COUNTER TRIGGER
+// =============================================
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       entry.target.classList.add('visible');
+
+      // Trigger counter if this is the experience strip
+      if (entry.target.classList.contains('experience-strip')) {
+        entry.target.querySelectorAll('.exp-number').forEach(el => {
+          if (!el.dataset.counted) {
+            el.dataset.counted = 'true';
+            animateCounter(el);
+          }
+        });
+      }
     }
   });
 }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-// Close mobile nav on click outside
+// =============================================
+// HERO PARTICLES
+// =============================================
+(function createParticles() {
+  const hero = document.querySelector('.hero');
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'hero-particle';
+    const x = 10 + Math.random() * 80;
+    const y = 10 + Math.random() * 80;
+    const delay = Math.random() * 5;
+    const size = 2 + Math.random() * 3;
+    p.style.cssText = `
+      left: ${x}%;
+      top: ${y}%;
+      width: ${size}px;
+      height: ${size}px;
+      animation-delay: ${delay}s;
+      background: ${['#6366f1', '#818cf8', '#a5b4fc', '#4f46e5'][Math.floor(Math.random() * 4)]};
+    `;
+    hero.appendChild(p);
+  }
+})();
+
+// =============================================
+// MOBILE NAV
+// =============================================
+function closeNav() {
+  document.querySelector('.nav-links').classList.remove('open');
+}
+
 document.addEventListener('click', (e) => {
   const nav = document.querySelector('nav');
   if (!nav.contains(e.target)) {
@@ -1043,7 +1376,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Console easter egg
+// =============================================
+// CONSOLE EASTER EGG
+// =============================================
 console.log('%c Arif Kurniawan ',
   'background: #6366f1; color: #fff; font-size: 14px; padding: 6px 12px; border-radius: 6px; font-weight: bold;');
 console.log('%c Backend Engineer — Golang & Microservices ',
