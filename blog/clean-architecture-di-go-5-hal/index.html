@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Architecture di Go: 5 Hal yang Baru Saya Pahami Setelah 5 Tahun — Arif Kurniawan</title>
+<meta name="description" content="Refleksi 5 tahun menerapkan Clean Architecture di Go — dari KoinWorks, PrivyID, Indodax, sampai side project pribadi.">
+<meta name="keywords" content="golang, clean architecture, go, backend, indonesia">
+<meta property="og:title" content="Clean Architecture di Go: 5 Hal yang Baru Saya Pahami Setelah 5 Tahun">
+<meta property="og:description" content="Refleksi 5 tahun menerapkan Clean Architecture di Go — dari KoinWorks, PrivyID, Indodax, sampai side project pribadi.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://arif-kurniawan.site/blog/clean-architecture-di-go-5-hal/">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   TOKENS — matching blog design
+   ============================================ */
+:root {
+  --bg-default: #0b1120;
+  --bg-surface: #0f172a;
+  --bg-elevated: #131c31;
+  --bg-hover: #1a2540;
+  --border-default: #1e293b;
+  --border-accent: #334155;
+  --border-focus: #6366f1;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-subtle: #1e1b4b;
+  --accent-soft: #312e81;
+  --accent-text: #a5b4fc;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.4);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
+  background: var(--bg-default);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.06) 1px, transparent 0);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   NAV
+   ============================================ */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  margin: 20px 0 48px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 16px;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e293b, #334155);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-text);
+  transition: var(--transition);
+}
+
+.brand:hover .brand-icon {
+  background: linear-gradient(135deg, var(--accent-subtle), var(--accent-soft));
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 500;
+  transition: var(--transition);
+  position: relative;
+  padding: 4px 0;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: var(--transition);
+  border-radius: 2px;
+}
+
+.nav-links a:hover { color: var(--text-primary); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-links a.active {
+  color: var(--accent-text);
+}
+.nav-links a.active::after {
+  width: 100%;
+}
+
+.nav-cta {
+  padding: 10px 24px;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.nav-cta:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.25);
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.nav-toggle span {
+  width: 24px;
+  height: 2px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  transition: var(--transition);
+}
+
+/* ============================================
+   ARTICLE HEADER
+   ============================================ */
+.article-header {
+  margin-bottom: 48px;
+}
+
+.article-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.article-back:hover {
+  color: var(--accent-text);
+}
+
+.article-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  border: 1px solid var(--accent-soft);
+}
+
+.article-header h1 {
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.article-meta .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+/* ============================================
+   ARTICLE CONTENT
+   ============================================ */
+.article-content {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.article-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 48px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-default);
+  letter-spacing: -0.3px;
+}
+
+.article-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-text);
+  margin: 32px 0 12px;
+}
+
+.article-content p {
+  margin-bottom: 20px;
+}
+
+.article-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.article-content em {
+  color: var(--text-secondary);
+}
+
+.article-content a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.article-content a:hover {
+  color: var(--accent-text);
+  border-bottom-color: var(--accent-soft);
+}
+
+.article-content ul,
+.article-content ol {
+  margin: 0 0 20px;
+  padding-left: 24px;
+}
+
+.article-content li {
+  margin-bottom: 8px;
+}
+
+.article-content blockquote {
+  margin: 24px 0;
+  padding: 16px 20px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-style: italic;
+  color: var(--text-primary);
+}
+
+.article-content blockquote p {
+  margin-bottom: 0;
+}
+
+.article-content hr {
+  border: none;
+  border-top: 1px solid var(--border-default);
+  margin: 40px 0;
+}
+
+/* Code blocks */
+.article-content pre {
+  margin: 24px 0;
+  padding: 20px 24px;
+  background: #0d1117;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+}
+
+.article-content pre code {
+  background: none;
+  padding: 0;
+  color: #e6edf3;
+  font-size: 14px;
+}
+
+.article-content code {
+  font-family: var(--font-mono);
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #e6edf3;
+}
+
+/* Tables */
+.article-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 24px 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.article-content th {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.article-content td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-default);
+  font-size: 14px;
+}
+
+.article-content tr:last-child td {
+  border-bottom: none;
+}
+
+.article-content tr:hover td {
+  background: var(--bg-hover);
+}
+
+/* ============================================
+   ARTICLE FOOTER
+   ============================================ */
+.article-footer {
+  margin: 48px 0;
+  padding: 24px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.article-footer-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.article-tag {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.article-tag:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+}
+
+.article-footer p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.article-footer p a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.article-footer p a:hover {
+  color: var(--accent-text);
+}
+
+/* Share section */
+.share-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-default);
+}
+
+.share-section span {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.share-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-btn:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+}
+
+/* Back to blog link */
+.back-to-blog {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 32px 0;
+  transition: var(--transition);
+}
+
+.back-to-blog:hover {
+  color: var(--accent-text);
+  gap: 10px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.site-footer {
+  text-align: center;
+  padding: 24px 0 48px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .container { padding: 0 16px; }
+
+  nav {
+    padding: 12px 18px;
+    margin: 12px 0 32px;
+    top: 12px;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-links.open { display: flex; }
+
+  .nav-links a {
+    display: block;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-links a:hover { background: var(--bg-hover); }
+  .nav-links a::after { display: none; }
+
+  .nav-toggle { display: flex; }
+
+  .article-content table {
+    font-size: 13px;
+  }
+
+  .article-content th,
+  .article-content td {
+    padding: 8px 10px;
+  }
+
+  .article-content pre {
+    padding: 14px 16px;
+    font-size: 13px;
+    margin: 16px -16px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="brand" aria-label="Home">
+      <div class="brand-icon">AK</div>
+      Arif Kurniawan
+    </a>
+
+    <button class="nav-toggle" aria-label="Toggle navigation" onclick="document.querySelector('.nav-links').classList.toggle('open'); this.classList.toggle('active')">
+      <span></span><span></span><span></span>
+    </button>
+
+    <ul class="nav-links" role="navigation">
+      <li><a href="/">Home</a></li>
+      <li><a href="/#experience">Experience</a></li>
+      <li><a href="/#services">Services</a></li>
+      <li><a href="/#skills">Skills</a></li>
+      <li><a href="/blog/" class="active">✏️ Blog</a></li>
+      <li><a href="/#contact">Contact</a></li>
+    </ul>
+
+    <a href="/#contact" class="nav-cta">Hire Me</a>
+  </nav>
+
+  <!-- ARTICLE HEADER -->
+  <article>
+    <div class="article-header">
+      <a href="/blog/" class="article-back">← Kembali ke Blog</a>
+      <div class="article-category">Golang</div>
+      <h1>Clean Architecture di Go: 5 Hal yang Baru Saya Pahami Setelah 5 Tahun</h1>
+      <div class="article-meta">
+        <span>8 Juni 2026</span>
+        <span class="dot"></span>
+        <span>8 min read</span>
+        <span class="dot"></span>
+        <span>Intermediate</span>
+      </div>
+    </div>
+
+    <!-- ARTICLE CONTENT -->
+    <div class="article-content">
+
+      <p>Saya mulai serius dengan Clean Architecture di Go sekitar tahun 2021, pas pertama kali join di <strong>KoinWorks</strong>. Waktu itu saya baca buku Robert C. Martin, nonton <em>The Clean Architecture</em> talk di YouTube, lalu pulang dengan satu keyakinan bulat:</p>
+
+      <blockquote><p><em>Clean Architecture adalah satu-satunya cara bikin software yang benar.</em></p></blockquote>
+
+      <p><em>Spoiler: pandangan itu terlalu naif.</em></p>
+
+      <p>Bukan berarti Clean Architecture itu buruk — justru sebaliknya, ini pattern yang powerful kalau diterapkan dengan benar. Tapi 5 tahun dan 3 perusahaan kemudian — <strong>KoinWorks, PrivyID, Indodax</strong> — plus beberapa side project pribadi (HRIS multi-merchant, secret scanner, routing app), saya akhirnya paham mana yang <strong>benar-benar penting</strong> dan mana yang cuma <strong>dogma yang bikin lemot</strong>.</p>
+
+      <p>Ini 5 hal yang baru benar-benar saya pahami setelah setengah dekade salah dan benarnya.</p>
+
+      <hr>
+
+      <h2>1. Clean Architecture Bukan Tentang Folder Structure</h2>
+
+      <p>Waktu pertama belajar CA, yang saya lakukan adalah: riset "struktur folder Go Clean Architecture" di Google, nemu template, lalu <em>copy-paste</em> struktur foldernya. Hasilnya? Project dengan:</p>
+
+<pre><code>handler/
+usecase/
+service/
+repository/
+model/
+dto/
+mapper/
+helper/</code></pre>
+
+      <p>Tujuh layer, tiga di antaranya cuma jadi <em>pass-through</em>. Dan ironisnya, <code>model/</code> dipanggil di <strong>semua layer lain</strong> — termasuk <code>handler/</code> yang harusnya layer terluar. Dependency rule sudah bocor dari hari pertama dan saya bahkan tidak sadar.</p>
+
+      <h3>Yang benar: Dependency Rule itu kuncinya</h3>
+
+      <p>Bob Martin bilang: <em>"Source code dependencies must point inward — toward the domain."</em> Bukan soal berapa folder yang kamu buat, tapi soal <strong>siapa yang boleh tahu siapa</strong>.</p>
+
+<pre><code>// ❌ SALAH: entity maling import "net/http"
+package entity
+
+import "net/http"
+
+type UserResponse struct {
+    Status  int    `json:"status"`  // http.Status response code nyangkut di entity
+    Message string `json:"message"`
+}
+
+// ✅ BENAR: entity pure Go, tidak tahu soal HTTP atau framework
+package entity
+
+type User struct {
+    ID        string    `json:"id"`
+    Email     string    `json:"email"`
+    FullName  string    `json:"full_name"`
+    CreatedAt time.Time `json:"created_at"`
+}</code></pre>
+
+      <p>Kalau <code>entity.User</code> punya field <code>http.StatusOK</code> artinya domain layer Anda sudah punya dependensi ke eksternal layer — poof, dependency rule bye-bye.</p>
+
+      <p><strong>Pelajaran saya:</strong> Sekarang di semua project — termasuk Indodax dan side project — saya cukup pakai 4 folder utama:</p>
+
+<pre><code>handler/     →  entry point (HTTP handler, gRPC handler, subscriber)
+usecase/     →  business logic (kecil, fokus per use case)
+repository/  →  data access (PostgreSQL, Redis, Kafka)
+entity/      →  domain model murni</code></pre>
+
+      <p>Bukan karena "ini struktur CA yang benar", tapi karena <strong>ini struktur minimum yang menjaga dependency rule tetap tegak.</strong> Kalau besok butuh layer tambahan, saya tambah. Tapi mulai dari sini dulu.</p>
+
+      <hr>
+
+      <h2>2. Interface: Kecil, Implisit, dan Didefinisikan di Pemakai</h2>
+
+      <p>Ini pelajaran paling keras buat saya — terutama karena saya datang dari latar belakang Java.</p>
+
+      <p>Di Java, interface itu <strong>kontrak eksplisit</strong> yang dideklarasikan di package yang sama dengan implementasinya. <code>UserRepository</code> interface didefinisikan di package <code>repository</code>, lalu <code>UserRepositoryImpl</code> mengimplementasikannya.</p>
+
+      <p>Saya bawa kebiasaan ini ke Go selama 1-2 tahun pertama. Hasilnya: file interface raksasa yang dipenuhi method, dan setiap kali ada perubahan, dua file (interface + implementasi) harus diedit. Ditambah lagi: interface ini saya simpan di package <code>repository/</code>, padahal yang <em>make</em> ada di <code>usecase/</code>. Ironis.</p>
+
+      <h3>Yang benar: Interface kecil, di package pemakai</h3>
+
+      <p>Di Go, interface itu <strong>implisit</strong> — sebuah tipe cukup mengimplementasikan method yang dibutuhkan, tanpa harus <code>implements</code> eksplisit. Dan prinsip ini punya konsekuensi: <strong>definisikan interface di tempat yang memakainya, bukan di tempat yang membuatnya.</strong></p>
+
+<pre><code>// ❌ SALAH: Interface raksasa di package repository
+package repository
+
+type UserRepository interface {
+    FindByID(id string) (*entity.User, error)
+    FindByEmail(email string) (*entity.User, error)
+    FindAll(filter Filter) ([]entity.User, error)
+    Create(user *entity.User) error
+    Update(user *entity.User) error
+    Delete(id string) error           // 12 method — dipaksa implement semua
+    ...
+}
+
+// ✅ BENAR: Interface kecil, di package yang make
+package usecase
+
+// UserFinder — cuma butuh method ini doang
+type UserFinder interface {
+    FindByID(id string) (*entity.User, error)
+}
+
+type GetUserProfileUseCase struct {
+    userFinder UserFinder  // depend ke interface, bukan ke concrete type
+}</code></pre>
+
+      <p>Sekarang <code>UserRepository</code> di <code>package repository</code> bisa punya 20 method — terserah dia. <code>usecase</code> cukup define interface <code>UserFinder</code> yang cuma butuh 1 method. Ini yang dinamain <strong>Interface Segregation Principle</strong> dalam bentuk paling natural di Go.</p>
+
+      <p><strong>Pelajaran dari PrivyID:</strong> Di PrivyID, saya pertama kali lihat production Go code yang benar-benar memisahkan interface sesuai kebutuhan consumer-nya. Satu domain entity bisa punya 3-4 interface kecil (<code>UserReader</code>, <code>UserWriter</code>, <code>UserFinder</code>) yang dipakai oleh use case yang berbeda. Hasilnya: <strong>testing jadi lebih gampang</strong> (mocking cukup 1-2 method), dan kode jadi lebih gampang di-refactor.</p>
+
+      <hr>
+
+      <h2>3. Dependency Injection: Manual Wiring Lebih dari Cukup</h2>
+
+      <p>Waktu baru pindah ke Go, saya panik: <em>"Go nggak punya Spring? Terus gimana cara DI-nya?"</em></p>
+
+      <p>Jawabannya sederhana: <strong>constructor injection manual</strong>.</p>
+
+<pre><code>func main() {
+    db := postgres.NewConn()
+    userRepo := repository.NewUserRepository(db)
+    userUsecase := usecase.NewUserUsecase(userRepo)
+    handler := handler.NewUserHandler(userUsecase)
+
+    http.ListenAndServe(":8080", handler)
+}</code></pre>
+
+      <p>Tapi saya pikir ini <em>too simple</em>. Pasti ada yang lebih baik. Jadi saya coba <strong>Google Wire</strong> — dan dapat kompleksitas yang nggak sebanding. Generated code yang susah dibaca, error message yang cryptic, dan satu kali circular dependency yang bikin saya mengutuk semesta.</p>
+
+      <p>Lalu saya coba <strong>uber/fx</strong> — lebih enak karena ada lifecycle management, tapi testing tetap jadi masalah. Mau mock dependency di fx? Siap-siap baca 3 halaman dokumentasi.</p>
+
+      <h3>Yang benar: Manual wiring dulu, DI framework nanti</h3>
+
+      <p>Sekarang aturan saya simpel:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Jumlah Service</th>
+            <th>Rekomendasi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1-15 service</td>
+            <td><strong>Manual wiring</strong> — simpel, jelas, testable</td>
+          </tr>
+          <tr>
+            <td>15-50 service</td>
+            <td>Manual wiring masih OK, bisa split jadi beberapa <code>wire</code> function</td>
+          </tr>
+          <tr>
+            <td>50+ service / tim besar</td>
+            <td>Baru mulai lirik DI framework</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Side project kayak <strong>HRIS multi-merchant</strong> dan <strong>secret scanner</strong> saya jalan dengan manual wiring. Malah secret scanner cuma <code>main.go</code> satu file — nggak butuh DI framework sama sekali.</p>
+
+<pre><code>// ✅ Main function HRIS - kurang dari 20 service, manual wiring aja
+func main() {
+    db := postgres.NewConn(cfg.Database)
+    cache := cache.NewInMemory()
+
+    userRepo := repository.NewUserRepository(db)
+    attendanceRepo := repository.NewAttendanceRepository(db, cache)
+    companyRepo := repository.NewCompanyRepository(db)
+
+    authUsecase := usecase.NewAuthUsecase(userRepo, cfg.JWT)
+    attendanceUsecase := usecase.NewAttendanceUsecase(attendanceRepo, companyRepo)
+    companyUsecase := usecase.NewCompanyUsecase(companyRepo)
+
+    authHandler := handler.NewAuthHandler(authUsecase)
+    attendanceHandler := handler.NewAttendanceHandler(attendanceUsecase)
+    companyHandler := handler.NewCompanyHandler(companyUsecase)
+
+    r := chi.NewRouter()
+    // ... register routes
+    http.ListenAndServe(":"+cfg.Port, r)
+}</code></pre>
+
+      <p>Baris per baris, jelas dependency-nya. Kalau ada error, langsung kelihatan. Junior dev bisa baca dan paham dalam 2 menit.</p>
+
+      <hr>
+
+      <h2>4. Error Handling: Domain Error Harus Pure, Mapping-nya di Boundary</h2>
+
+      <p>Ini pelajaran yang baru benar-benar saya pahami di <strong>Indodax</strong>.</p>
+
+      <p>Di exchange crypto, error handling itu bukan sekadar "return 404" atau "return 500". Setiap error punya implikasi finansial. <code>InsufficientFund</code> harus di-handle beda dengan <code>OrderNotFound</code>. Klien perlu tahu persis apa yang salah — plus dalam bahasa Indonesia atau Inggris tergantung preferensi mereka.</p>
+
+      <p>Masalahnya: kalau error dari repository (SQL <code>sql.ErrNoRows</code>) bocor sampai ke handler, maka:</p>
+      <ol>
+        <li>Handler jadi tahu soal database — <strong>bocor abstraction layer</strong></li>
+        <li>Error message jadi teknis — user lihat <em>"no rows in result set"</em> ❌</li>
+        <li>Testing HTTP handler jadi perlu mock database — overhead nggak perlu</li>
+      </ol>
+
+      <h3>Yang benar: Domain error + mapping di boundary</h3>
+
+<pre><code>package entity
+
+// DomainError — error murni Go, tanpa import external.
+type DomainError struct {
+    Code    string
+    Message string
+    Err     error
+}
+
+func (e *DomainError) Error() string {
+    return fmt.Sprintf("[%s] %s", e.Code, e.Message)
+}
+
+func (e *DomainError) Unwrap() error {
+    return e.Err
+}
+
+var (
+    ErrUserNotFound     = &DomainError{Code: "USER_NOT_FOUND", Message: "user tidak ditemukan"}
+    ErrInsufficientFund = &DomainError{Code: "INSUFFICIENT_FUND", Message: "saldo tidak mencukupi"}
+    ErrOrderExpired     = &DomainError{Code: "ORDER_EXPIRED", Message: "pesanan sudah kadaluarsa"}
+)</code></pre>
+
+<pre><code>package handler
+
+func mapDomainErrorToHTTP(err error) int {
+    var domainErr *entity.DomainError
+    if !errors.As(err, &domainErr) {
+        log.Printf("unexpected error: %v", err)
+        return http.StatusInternalServerError
+    }
+    switch domainErr.Code {
+    case "USER_NOT_FOUND":
+        return http.StatusNotFound
+    case "INSUFFICIENT_FUND":
+        return http.StatusUnprocessableEntity
+    case "ORDER_EXPIRED":
+        return http.StatusGone
+    default:
+        return http.StatusBadRequest
+    }
+}</code></pre>
+
+<pre><code>// Di usecase — return domain error, nggak peduli HTTP
+func (uc *TransferUsecase) Transfer(ctx context.Context, req TransferRequest) (*entity.TransferResult, error) {
+    sender, err := uc.userFinder.FindByID(ctx, req.SenderID)
+    if err != nil {
+        return nil, fmt.Errorf("find sender: %w", err)
+    }
+    receiver, err := uc.userFinder.FindByID(ctx, req.ReceiverID)
+    if err != nil {
+        return nil, fmt.Errorf("find receiver: %w", err)
+    }
+    if sender.Balance < req.Amount {
+        return nil, entity.ErrInsufficientFund
+    }
+    // ... proceed
+}</code></pre>
+
+      <p>Dengan pendekatan ini:</p>
+      <ul>
+        <li><strong>Domain layer</strong> pure — nggak tahu soal HTTP, gRPC, atau apapun</li>
+        <li><strong>Handler</strong> satu-satunya tempat yang paham HTTP status code</li>
+        <li><strong>Error message</strong> konsisten — bisa dipakai untuk response JSON, log, atau monitoring</li>
+        <li><strong>Testing</strong> — usecase cukup test domain error, handler cukup test mapping</li>
+      </ul>
+
+      <hr>
+
+      <h2>5. Pragmatism > Purism: Kapan Saya Melanggar Clean Architecture</h2>
+
+      <p>Ini mungkin bagian paling penting dari artikel ini.</p>
+
+      <p>Setelah 5 tahun, saya sadar: <strong>Clean Architecture itu pedoman, bukan hukum.</strong> Ada kalanya melanggar aturan itu lebih baik daripada kaku mengikutinya.</p>
+
+      <h3>Kapan saya melanggar</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Skenario</th>
+            <th>Pelanggaran</th>
+            <th>Alasan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>CRUD sederhana</strong></td>
+            <td>Skip usecase layer, handler langsung ke repository</td>
+            <td>Usecase cuma pass-through; nambah file tanpa nilai tambah</td>
+          </tr>
+          <tr>
+            <td><strong>Side project</strong> (<code>secret scanner</code>)</td>
+            <td>Pake struct konkret tanpa interface</td>
+            <td>1 implementasi, 0% chance ganti database/driver</td>
+          </tr>
+          <tr>
+            <td><strong>Prototype / MVP</strong></td>
+            <td>Gabung handler + usecase di 1 file</td>
+            <td>Speed > purity — refactor setelah ada PMF</td>
+          </tr>
+          <tr>
+            <td><strong>CLI tool kecil</strong></td>
+            <td>Akses database langsung dari <code>main.go</code></td>
+            <td>Program selesai dalam 2 file, nggak perlu layer</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Contoh nyata: Secret Scanner</h3>
+
+<pre><code>// ✅ Side project yang cukup dalam 1 file + struct konkret
+func main() {
+    repo := NewGitRepo("/tmp/test-repo")   // struct konkret
+    results := scanSecrets(repo)           // function biasa
+    for _, r := range results {
+        printAlert(r)                       // langsung, bukan method abstraction
+    }
+}
+
+type SecretResult struct {
+    File    string
+    Line    int
+    Type    string
+    Context string
+}
+
+func scanSecrets(repo *GitRepo) []SecretResult {
+    results := []SecretResult{}
+    for _, file := range repo.Files {
+        if matched, secretType := matchPattern(file); matched {
+            results = append(results, SecretResult{
+                File:    file.Path,
+                Line:    file.MatchLine,
+                Type:    secretType,
+                Context: file.Snippet,
+            })
+        }
+    }
+    return results
+}</code></pre>
+
+      <p>Kalau saya paksa pake Clean Architecture di sini, saya akan punya:</p>
+      <ul>
+        <li><code>entity/secret_result.go</code></li>
+        <li><code>usecase/scan_secret.go</code></li>
+        <li><code>repository/git_repo.go</code></li>
+        <li><code>handler/cli_handler.go</code></li>
+      </ul>
+
+      <p>...menambah 200 baris abstraction untuk kode yang totalnya cuma 150 baris. <strong>Itu bukan clean, itu waste.</strong></p>
+
+      <h3>Prinsip yang saya pakai sekarang</h3>
+
+      <blockquote><p><em>"Tahu kapan harus menerapkan Clean Architecture dan kapan cukup pake function biasa — itu yang membedakan senior engineer dari yang cuma ngikutin dogma."</em></p></blockquote>
+
+      <p>Atau dalam bahasa Rob Pike: <em>"A little copying is better than a little dependency."</em> Kadang, langsung lebih baik daripada abstraksi yang dipaksakan.</p>
+
+      <hr>
+
+      <h2>Penutup</h2>
+
+      <p>Lima tahun dan tiga perusahaan kemudian, ini yang saya pegang:</p>
+
+      <ol>
+        <li><strong>Folder structure bukan CA</strong> — dependency rule adalah intinya, sisanya detail</li>
+        <li><strong>Interface kecil di package pemakai</strong> — biarkan consumer yang define kebutuhannya</li>
+        <li><strong>Manual wiring itu fine</strong> — DI framework baru diperlukan di skala 50+ service</li>
+        <li><strong>Error adalah boundary</strong> — domain error pure, mapping-nya di external layer</li>
+        <li><strong>Pragmatism beats purism</strong> — tahu kapan melanggar aturan lebih penting daripada tahu aturannya</li>
+      </ol>
+
+      <p>Clean Architecture bukan tentang purity kode atau folder yang rapi. Ini tentang <strong>memisahkan apa yang sering berubah dari apa yang jarang berubah</strong>. Kalau kamu bisa menjaga boundary itu tetap tipis dan jelas, kamu sudah 80% di sana — bahkan tanpa 7 layer folder.</p>
+
+      <hr>
+
+      <p><em>Punya pengalaman berbeda? Atau setuju dengan poin nomor berapa? Tulis di komentar — diskusi selalu lebih seru daripada doktrin.</em></p>
+
+      <hr>
+
+      <h2>Rekomendasi Bacaan</h2>
+
+      <ul>
+        <li><a href="https://www.amazon.com/Clean-Architecture-Craftsmans-Software-Structure/dp/0134494164">Clean Architecture: A Craftsman's Guide — Robert C. Martin</a></li>
+        <li><a href="https://dev.to/eminetto/clean-architecture-using-golang-5k3">Go with Clean Architecture — Elton Minetto</a></li>
+        <li><a href="https://dev.to/lucasdeataides/why-clean-architecture-struggles-in-golang-and-what-works-better-2p6b">Why Clean Architecture Struggles in Golang — Lucas de Ataides</a></li>
+        <li><a href="https://go-proverbs.github.io/">Go Proverbs — Rob Pike</a></li>
+      </ul>
+
+    </div>
+
+    <!-- ARTICLE FOOTER -->
+    <div class="article-footer">
+      <div class="article-footer-tags">
+        <a href="/blog/?filter=golang" class="article-tag">#golang</a>
+        <span class="article-tag">#cleanarchitecture</span>
+        <span class="article-tag">#backend</span>
+        <span class="article-tag">#softwareengineering</span>
+        <span class="article-tag">#indonesia</span>
+      </div>
+      <p>Artikel ini pertama kali terbit di <a href="https://arif-kurniawan.site/blog/">arif-kurniawan.site</a>. Jika menurutmu artikel ini bermanfaat, bagikan ke teman-temanmu.</p>
+
+      <div class="share-section">
+        <span>Bagikan:</span>
+        <a href="https://twitter.com/intent/tweet?text=Clean%20Architecture%20di%20Go%3A%205%20Hal%20yang%20Baru%20Saya%20Pahami%20Setelah%205%20Tahun&url=https://arif-kurniawan.site/blog/clean-architecture-di-go-5-hal/" target="_blank" rel="noopener" class="share-btn">× Twitter</a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://arif-kurniawan.site/blog/clean-architecture-di-go-5-hal/" target="_blank" rel="noopener" class="share-btn">in LinkedIn</a>
+      </div>
+    </div>
+
+    <a href="/blog/" class="back-to-blog">← Kembali ke semua artikel</a>
+  </article>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    &copy; 2026 Arif Kurniawan. Built with &hearts; in Jakarta.
+  </footer>
+
+</div>
+
+<script>
+// Mobile nav
+document.addEventListener('click', (e) => {
+  const nav = document.querySelector('nav');
+  if (!nav.contains(e.target)) {
+    document.querySelector('.nav-links').classList.remove('open');
+  }
+});
+</script>
+
+</body>
+</html>
